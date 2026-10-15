@@ -1,0 +1,26 @@
+seed: 42
+data_dir: data/processed
+
+encoder:
+  type_dim: 8
+  emb_dim: 64
+  hidden_dim: 128
+  out_dim: 128          # d - agree with Person 3, do not change alone
+  num_relations: 12     # 6 base + 6 inverse
+  num_bases: 4
+  dropout: 0.2
+
+latent:
+  latent_dim: 128
+
+decoder:
+  num_base_relations: 6
+  gamma: 6.0            # RotatE margin, tune later
+
+training:
+  epochs: 200
+  lr: 0.001
+  num_neg: 16
+  kl_weight: 1.0
+  kl_warmup_epochs: 20
+  eval_every: 10
