@@ -1,0 +1,5 @@
+model: popularity
+seed: 42
+data_dir: data/processed
+owner: P4
+notes: "sanity check; ignores the head entity"
