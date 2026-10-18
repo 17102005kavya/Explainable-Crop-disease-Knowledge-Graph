@@ -7,8 +7,5 @@ __pycache__/
 *.log
 results/*.pt
 results/checkpoints/
-<<<<<<< HEAD
 data/raw/
-=======
->>>>>>> origin/main
 data/processed/
