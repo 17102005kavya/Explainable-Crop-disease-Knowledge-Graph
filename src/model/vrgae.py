@@ -1,5 +1,5 @@
 """Owner: Person 2 + Person 3 (integration, day 4).
-Full VRGAE-lite = NodeFeatures + RGCNEncoder + VariationalLatent + RotatEDecoder.
+Full VRGAE-lite = NodeFeatures + RGCNEncoder + VariationalLatent + RotatEDecoder (or ComplExDecoder).
 """
 from typing import Callable, Dict, Optional, Tuple
 
@@ -8,7 +8,7 @@ import torch.nn as nn
 
 from src.encoder.node_features import NodeFeatures
 from src.encoder.rgcn import RGCNEncoder
-from src.model.decoder import RotatEDecoder
+from src.model.decoder import ComplExDecoder, RotatEDecoder
 from src.model.latent import VariationalLatent
 from src.model.loss import compute_loss_breakdown, total_loss
 
@@ -20,7 +20,7 @@ class VRGAE(nn.Module):
       1. NodeFeatures (type one-hot + learnable embedding)
       2. RGCNEncoder (2-layer relation-aware GCN with basis decomposition)
       3. VariationalLatent (mu & logvar heads with reparameterization trick)
-      4. RotatEDecoder (complex space relational rotation distance scoring)
+      4. RotatEDecoder or ComplExDecoder (configurable via cfg['model']['decoder'])
     """
 
     def __init__(self, node_types: torch.Tensor, cfg: dict):
@@ -30,6 +30,7 @@ class VRGAE(nn.Module):
         enc_cfg = cfg.get("encoder", {})
         lat_cfg = cfg.get("latent", {})
         dec_cfg = cfg.get("decoder", {})
+        model_cfg = cfg.get("model", {})
 
         # 1. Node features (type features + entity embedding)
         emb_dim = enc_cfg.get("emb_dim", 64)
@@ -41,6 +42,7 @@ class VRGAE(nn.Module):
         num_relations = enc_cfg.get("num_relations", 12)
         num_bases = enc_cfg.get("num_bases", 4)
         dropout = enc_cfg.get("dropout", 0.2)
+
         self.encoder = RGCNEncoder(
             in_dim=self.node_features.out_dim,
             hidden_dim=hidden_dim,
@@ -51,17 +53,18 @@ class VRGAE(nn.Module):
         )
 
         # 3. Variational Latent Layer
-        latent_dim = lat_cfg.get("latent_dim", 128)
+        latent_dim = lat_cfg.get("latent_dim", out_dim)
         self.latent = VariationalLatent(in_dim=out_dim, latent_dim=latent_dim)
 
-        # 4. RotatE Decoder
+        # 4. Decoder (RotatE or ComplEx, configurable)
         num_base_relations = dec_cfg.get("num_base_relations", 6)
-        gamma = dec_cfg.get("gamma", 6.0)
-        self.decoder = RotatEDecoder(
-            num_base_relations=num_base_relations,
-            dim=latent_dim,
-            gamma=gamma,
-        )
+        gamma = float(dec_cfg.get("gamma", 6.0))
+        decoder_type = model_cfg.get("decoder", "rotate").lower()
+
+        if decoder_type == "complex":
+            self.decoder = ComplExDecoder(num_base_relations=num_base_relations, dim=latent_dim)
+        else:
+            self.decoder = RotatEDecoder(num_base_relations=num_base_relations, dim=latent_dim, gamma=gamma)
 
     def encode(self, edge_index: torch.Tensor, edge_type: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Forward pass through encoder and variational latent layer -> (z, mu, logvar)."""
@@ -75,11 +78,11 @@ class VRGAE(nn.Module):
         return self.encode(edge_index, edge_type)
 
     def score(self, z: torch.Tensor, h: torch.Tensor, r: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        """Compute RotatE score for triples (h, r, t) using latent representations z."""
+        """Compute decoder score for triples (h, r, t) using latent representations z."""
         return self.decoder.score(z, h, r, t)
 
     def score_all_tails(self, z: torch.Tensor, h: torch.Tensor, r: torch.Tensor) -> torch.Tensor:
-        """Compute RotatE score for all candidate tails given (h, r) using latent representations z."""
+        """Compute decoder score for all candidate tails given (h, r) using latent representations z."""
         return self.decoder.score_all_tails(z, h, r)
 
     def compute_loss(
@@ -129,3 +132,4 @@ class VRGAE(nn.Module):
                 return self.decoder.score_all_tails(z_eval, h, r)
 
         return scorer_fn
+

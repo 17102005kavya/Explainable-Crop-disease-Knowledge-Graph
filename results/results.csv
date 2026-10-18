@@ -1,1 +1,24 @@
 run_id,date,owner,model,config,seed,relation,MRR,Hits@1,Hits@3,Hits@10,AUC,notes
+run_p2_baseline_50ep_full,2026-10-18,Person 2,RGCN+DistMult,configs/default.yaml,42,all,0.0121,0.0000,0.0021,0.0242,,Full validation on 1942 triples (50 epochs lr=0.001 k=16)
+run_p2_baseline_50ep_slice,2026-10-18,Person 2,RGCN+DistMult,configs/default.yaml,42,all,0.0309,0.0000,0.0060,0.0720,,500-triple validation slice (50 epochs lr=0.001 k=16)
+phase2_tune_lr_0.0001,2026-10-18,Person 2,RGCN+DistMult,"lr=0.0001,dim=128,neg=16,drop=0.2",42,all,0.0005,0.0,0.0,0.0,,Stage 2.1 LR tuning (best epoch 80)
+phase2_tune_lr_0.0005,2026-10-18,Person 2,RGCN+DistMult,"lr=0.0005,dim=128,neg=16,drop=0.2",42,all,0.0065,0.0,0.0005,0.0134,,Stage 2.1 LR tuning (best epoch 80)
+phase2_tune_lr_0.001,2026-10-18,Person 2,RGCN+DistMult,"lr=0.001,dim=128,neg=16,drop=0.2",42,all,0.0124,0.001,0.0031,0.0242,,Stage 2.1 LR tuning (best epoch 45)
+phase2_tune_lr_0.003,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=128,neg=16,drop=0.2",42,all,0.0215,0.0082,0.0154,0.0376,,Stage 2.1 LR tuning (best epoch 15)
+phase2_tune_neg_32,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=128,neg=32,drop=0.2",42,all,0.0242,0.0088,0.016,0.0438,,Stage 2.2 Negatives tuning (best epoch 20)
+phase2_tune_neg_64,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=128,neg=64,drop=0.2",42,all,0.0224,0.0062,0.016,0.0484,,Stage 2.2 Negatives tuning (best epoch 25)
+phase2_tune_drop0.1_dim128,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=128,neg=32,drop=0.1",42,all,0.0275,0.0129,0.0175,0.0499,,Stage 2.3 Dropout/Dim tuning (best epoch 20)
+phase2_tune_drop0.3_dim128,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=128,neg=32,drop=0.3",42,all,0.0243,0.0082,0.016,0.0499,,Stage 2.3 Dropout/Dim tuning (best epoch 20)
+phase2_tune_drop0.2_dim256,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=256,neg=32,drop=0.2",42,all,0.0601,0.0273,0.0484,0.1241,,Stage 2.3 Dropout/Dim tuning (best epoch 80)
+phase2_best_seed_42,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=256,neg=32,drop=0.2",42,all,0.0623,0.0294,0.0505,0.1277,,Final selected R-GCN+DistMult seed 42
+phase2_best_seed_123,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=256,neg=32,drop=0.2",123,all,0.0455,0.0118,0.0417,0.1076,,Final selected R-GCN+DistMult seed 123
+phase2_best_seed_999,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=256,neg=32,drop=0.2",999,all,0.0584,0.0221,0.0525,0.1298,,Final selected R-GCN+DistMult seed 999
+phase3_rgcn_complex,2026-10-18,Person 3,RGCN+ComplEx,"lr=0.003,dim=256,neg=32,drop=0.2",42,all,0.0402,0.0129,0.0314,0.0875,,ComplEx decoder (best epoch 80)
+phase3_rgcn_rotate,2026-10-18,Person 3,RGCN+RotatE,"lr=0.003,dim=256,neg=32,drop=0.2,gamma=6.0",42,all,0.0234,0.0,0.0237,0.0664,,RotatE decoder (best epoch 15)
+phase3_vrgae_full,2026-10-18,Person 3,VRGAE (Full),"lr=0.003,dim=256,neg=32,drop=0.2,gamma=6.0,beta=0.001",42,all,0.0264,0.0,0.0221,0.0767,,Complete VRGAE (best epoch 80)
+test_baseline_50ep,2026-10-18,Person 2,RGCN+DistMult,configs/default.yaml,42,all,0.0143,0.0000,0.0046,0.0350,,Single-pass held-out test evaluation (1942 triples)
+test_tuned_distmult,2026-10-18,Person 2,RGCN+DistMult,"lr=0.003,dim=256,neg=32,drop=0.2",42,all,0.0699,0.0335,0.0685,0.1395,,Single-pass held-out test evaluation (1942 triples)
+test_rgcn_complex,2026-10-18,Person 3,RGCN+ComplEx,"lr=0.003,dim=256,neg=32,drop=0.2",42,all,0.0436,0.0149,0.0391,0.0978,,Single-pass held-out test evaluation (1942 triples)
+test_rgcn_rotate,2026-10-18,Person 3,RGCN+RotatE,"lr=0.003,dim=256,neg=32,drop=0.2,gamma=6.0",42,all,0.0240,0.0000,0.0283,0.0597,,Single-pass held-out test evaluation (1942 triples)
+test_vrgae_full,2026-10-18,Person 3,VRGAE (Full),"lr=0.003,dim=256,neg=32,drop=0.2,gamma=6.0,beta=0.001",42,all,0.0259,0.0000,0.0211,0.0772,,Single-pass held-out test evaluation (1942 triples)
+
