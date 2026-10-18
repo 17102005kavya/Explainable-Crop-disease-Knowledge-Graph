@@ -1,1 +1,3 @@
 run_id,date,owner,model,config,seed,relation,MRR,Hits@1,Hits@3,Hits@10,AUC,notes
+run_p2_baseline_50ep_full,2026-10-18,Person 2,RGCN+DistMult,configs/default.yaml,42,all,0.0121,0.0000,0.0021,0.0242,,Full validation on 1942 triples (50 epochs lr=0.001 k=16)
+run_p2_baseline_50ep_slice,2026-10-18,Person 2,RGCN+DistMult,configs/default.yaml,42,all,0.0309,0.0000,0.0060,0.0720,,500-triple validation slice (50 epochs lr=0.001 k=16)
