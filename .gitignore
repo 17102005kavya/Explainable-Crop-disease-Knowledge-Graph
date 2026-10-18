@@ -7,3 +7,4 @@ __pycache__/
 *.log
 results/*.pt
 results/checkpoints/
+data/processed/
