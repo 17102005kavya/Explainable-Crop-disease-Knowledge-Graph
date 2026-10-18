@@ -25,6 +25,10 @@ def load_latest() -> dict:
     best = {}                                           # config stem -> (timestamp, run_id, rows)
     for rid, rows in runs.items():
         first = next(iter(rows.values()))
+        if "overall" not in rows:
+            
+            continue
+
         stem = Path(first["config"].replace("\\", "/")).stem
         ts = rid.rsplit("-", 1)[-1]
         if stem not in best or ts > best[stem][0]:
