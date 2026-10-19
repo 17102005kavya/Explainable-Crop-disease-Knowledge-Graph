@@ -1,6 +1,6 @@
 model: vrgae
 source: checkpoint
-checkpoint: results/vrgae_best.pt
+checkpoint: results/vrgae_checkpoint.pt
 seed: 42
 data_dir: data/processed
 owner: P4
