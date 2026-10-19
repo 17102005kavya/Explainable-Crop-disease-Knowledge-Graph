@@ -1,0 +1,19 @@
+model: rgcn_distmult
+seed: 42
+data_dir: data/processed
+owner: P4
+params:
+  emb_dim: 16
+  hidden: 128
+  out_dim: 128
+  num_bases: 4
+  dropout: 0.5
+  use_graph: true
+training:
+  epochs: 100
+  lr: 0.001
+  num_neg: 16
+  batch_size: 2048
+  eval_every: 5
+  weight_decay: 0.0001
+notes: "baseline 2: R-GCN + DistMult; settings picked by val MRR from a 3-run grid"
