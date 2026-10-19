@@ -188,18 +188,26 @@ def main():
             H_r = enc_r(nf_r(), edge_index, edge_type)
         models_info["R-GCN+RotatE"] = lambda h, r: dec_r.score_all_tails(H_r, h, r, chunk_size=100)
 
+
     # 5. Full VRGAE
-    if Path("results/vrgae_best.pt").exists():
-        ckpt_v = torch.load("results/vrgae_best.pt", weights_only=False)
-        cfg_v = {
-            "encoder": {"emb_dim": 128, "hidden_dim": 256, "out_dim": 256, "num_relations": 12, "num_bases": 4, "dropout": 0.2},
-            "decoder": {"num_base_relations": 6, "gamma": 6.0},
-            "model": {"decoder": "rotate"},
-        }
+    checkpoint_path = Path("results/vrgae_checkpoint.pt")
+    if checkpoint_path.exists():
+        ckpt_v = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+
+        # Use the same configuration that was saved with the trained checkpoint.
+        cfg_v = ckpt_v["config"]
         vrgae = VRGAE(node_types, cfg_v)
-        vrgae.load_state_dict(ckpt_v["model_state"])
+
+        # train.py saves weights under "model_state_dict".
+        vrgae.load_state_dict(ckpt_v["model_state_dict"])
         vrgae.eval()
-        models_info["VRGAE (Full)"] = vrgae.make_score_all_tails(edge_index, edge_type)
+
+        models_info["VRGAE (Full)"] = vrgae.make_score_all_tails(
+            edge_index, edge_type
+        )
+    else:
+        print(f"Skipping VRGAE: checkpoint not found at {checkpoint_path}")
+
 
     print("==========================================================================================")
     print("PHASE 4: DETAILED PER-RELATION BREAKDOWN ON VALIDATION SET (UNRESTRICTED FILTERED RANKING)")
