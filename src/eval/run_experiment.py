@@ -31,7 +31,10 @@ def build_and_fit(cfg: dict, d: dict):
     name, p, tr = cfg["model"], cfg.get("params", {}), cfg.get("training", {})
     N, R = d["meta"]["num_entities"], len(d["meta"]["relations"])
     seed = cfg["seed"]
-    torch.manual_seed(seed)                       # seeds the model initialisation too
+    torch.manual_seed(seed)
+    if name == "vrgae":
+        from src.eval.vrgae_adapter import build_vrgae      # lazy import: needs the real latent.py / loss.py
+        return build_vrgae(cfg, d)                      # seeds the model initialisation too
     if name == "popularity":
         return PopularityBaseline(d["train"], N, R), {}
     if name == "rotate":

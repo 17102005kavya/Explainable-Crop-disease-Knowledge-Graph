@@ -1,0 +1,29 @@
+model: vrgae
+source: train
+seed: 42
+data_dir: data/processed
+owner: P4
+encoder:
+  emb_dim: 64
+  hidden_dim: 128
+  out_dim: 128
+  num_relations: 12
+  num_bases: 4
+  dropout: 0.2
+decoder:
+  num_base_relations: 6
+  gamma: 6.0
+architecture:
+  decoder: rotate
+training:
+  epochs: 100
+  lr: 0.001
+  weight_decay: 0.0001
+  num_neg: 16
+  batch_size: 2048
+  adv_temp: 1.0
+  kl_weight: 0.001
+  kl_warmup: 20
+  eval_every: 5
+eval_chunk: 32
+notes: "VRGAE trained with the shared recipe: mini-batches, batch edges hidden, same loss as baselines + KL"

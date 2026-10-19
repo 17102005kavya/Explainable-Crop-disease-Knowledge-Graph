@@ -1,0 +1,20 @@
+model: vrgae
+source: checkpoint
+checkpoint: results/vrgae_best.pt
+seed: 42
+data_dir: data/processed
+owner: P4
+encoder:
+  emb_dim: 128
+  hidden_dim: 256
+  out_dim: 256
+  num_relations: 12
+  num_bases: 4
+  dropout: 0.2
+decoder:
+  num_base_relations: 6
+  gamma: 6.0
+architecture:
+  decoder: rotate
+eval_chunk: 32
+notes: "Person 3's checkpoint (lr=0.003, full-batch), evaluated through the shared evaluator"
