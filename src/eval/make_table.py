@@ -12,7 +12,8 @@ NAMES = {
     "rotate": "RotatE alone (baseline 1)",
     "rgcn_distmult": "R-GCN + DistMult (baseline 2)",
     "distmult_nograph": "DistMult, no graph (ablation)",
-    "vrgae": "VRGAE-lite (ours)",
+    "vrgae": "VRGAE-lite (ours, shared training recipe)",
+    "vrgae_checkpoint": "VRGAE-lite (ours, as trained by Person 3)",
 }
 RELS = ["RegionIs", "ConditionIs", "Damage", "InflictHarmPart", "ManifestAs", "TemperIs"]
 
@@ -26,7 +27,7 @@ def load_latest() -> dict:
     for rid, rows in runs.items():
         first = next(iter(rows.values()))
         if "overall" not in rows:
-            
+
             continue
 
         stem = Path(first["config"].replace("\\", "/")).stem
