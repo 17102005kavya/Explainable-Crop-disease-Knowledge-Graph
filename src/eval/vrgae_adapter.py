@@ -99,15 +99,26 @@ def build_vrgae(cfg: dict, d: dict):
 
     seed = cfg["seed"]
     torch.manual_seed(seed)
-    model_cfg = {k: cfg[k] for k in ("encoder", "latent", "decoder") if k in cfg}
-    model_cfg["model"] = cfg.get("architecture", {"decoder": "rotate"})   # VRGAE expects cfg["model"]["decoder"]
-    model = VRGAE(d["node_types"], model_cfg)
     chunk = cfg.get("eval_chunk", 32)
-
+    ckpt = None
     if cfg.get("source", "train") == "checkpoint":
         ckpt = torch.load(cfg["checkpoint"], map_location="cpu", weights_only=False)
-        model.load_state_dict(ckpt.get("model_state") or ckpt["model_state_dict"])
-        extra = {"checkpoint": cfg["checkpoint"], "ckpt_epoch": ckpt.get("epoch")}
+
+    if ckpt is not None and isinstance(ckpt.get("config"), dict):
+        model_cfg = ckpt["config"]                  # train.py stores the architecture it was trained with
+        arch = "architecture read from the checkpoint"
+    else:
+        model_cfg = {k: cfg[k] for k in ("encoder", "latent", "decoder") if k in cfg}
+        model_cfg["model"] = cfg.get("architecture", {"decoder": "rotate"})   # VRGAE expects cfg["model"]["decoder"]
+        arch = "architecture from the YAML"
+    model = VRGAE(d["node_types"], model_cfg)
+
+    if ckpt is not None:
+        state = ckpt.get("model_state") or ckpt.get("model_state_dict")      # train_models.py / train.py
+        if state is None:
+            raise KeyError(f"no model weights in checkpoint; keys are {list(ckpt.keys())}")
+        model.load_state_dict(state)
+        extra = {"checkpoint": cfg["checkpoint"], "ckpt_epoch": ckpt.get("epoch"), "arch": arch}
     else:
         ep, mrr = fit_shared_recipe(model, d, seed=seed, chunk_size=chunk, **cfg.get("training", {}))
         extra = {"best_epoch": ep, "val_MRR": round(mrr, 4)}
