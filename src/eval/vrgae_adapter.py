@@ -11,7 +11,9 @@ import inspect
 import torch
 import torch.nn.functional as F
 
+from src.data.prepare_cropdp import UniformNegativeSampler      # the team's ONE negative sampler
 from src.eval.evaluator import evaluate_ranking
+from src.eval.repro_utils import sha256_file
 
 
 class VRGAEScorer:
@@ -50,6 +52,7 @@ def fit_shared_recipe(model, data: dict, epochs=100, lr=0.001, weight_decay=0.00
     assert ei.size(1) == 2 * n, "graph must be train edges + inverses"
     tid = torch.arange(n).repeat(2)                 # edge k and n+k both come from train triple k
     known = torch.cat([data["train"], data["val"], data["test"]])
+    sampler = UniformNegativeSampler(known.numpy(), N, data["meta"]["num_relations"], seed=seed)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scorer = VRGAEScorer(model, ei, et, chunk_size)
     best_mrr, best_state, best_ep = -1.0, None, 0
@@ -69,11 +72,8 @@ def fit_shared_recipe(model, data: dict, epochs=100, lr=0.001, weight_decay=0.00
             keep = ~drop[tid]                        # hide this batch's own edges from the graph
             z, mu, logvar = model.encode(ei[:, keep], et[keep])
             pos = model.score(z, h, r, t)
-            rand = torch.randint(0, N, (B, num_neg))
-            head_side = torch.rand(B, 1) < 0.5
-            hn = torch.where(head_side, rand, h[:, None].expand(B, num_neg))
-            tn = torch.where(head_side, t[:, None].expand(B, num_neg), rand)
-            rn = r[:, None].expand(B, num_neg)
+            negs = torch.from_numpy(sampler.sample(b.numpy(), k=num_neg)).long()   # shared sampler -> [B, K, 3]
+            hn, rn, tn = negs[..., 0], negs[..., 1], negs[..., 2]
             neg = model.score(z, hn.reshape(-1), rn.reshape(-1), tn.reshape(-1)).view(B, num_neg)
             w = torch.softmax(adv_temp * neg, dim=1).detach()
             link = -F.logsigmoid(pos).mean() - (w * F.logsigmoid(-neg)).sum(1).mean()
@@ -118,7 +118,8 @@ def build_vrgae(cfg: dict, d: dict):
         if state is None:
             raise KeyError(f"no model weights in checkpoint; keys are {list(ckpt.keys())}")
         model.load_state_dict(state)
-        extra = {"checkpoint": cfg["checkpoint"], "ckpt_epoch": ckpt.get("epoch"), "arch": arch}
+        extra = {"checkpoint": cfg["checkpoint"], "ckpt_sha256": sha256_file(cfg["checkpoint"])[:12],
+                 "ckpt_epoch": ckpt.get("epoch"), "arch": arch}
     else:
         ep, mrr = fit_shared_recipe(model, d, seed=seed, chunk_size=chunk, **cfg.get("training", {}))
         extra = {"best_epoch": ep, "val_MRR": round(mrr, 4)}

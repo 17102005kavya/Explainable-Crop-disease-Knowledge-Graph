@@ -21,10 +21,12 @@ from src.data.loader import load_processed                                   # n
 from src.eval.baselines import (PopularityBaseline, RotatEBaseline,           # noqa: E402
                                 RGCNDistMultBaseline)
 from src.eval.evaluator import evaluate_ranking, evaluate_auc                 # noqa: E402
+from src.eval.repro_utils import compare_rows, git_commit, latest_logged_rows   # noqa: E402
 
 FIELDS = ["run_id", "date", "owner", "model", "config", "seed", "relation",
           "MRR", "Hits@1", "Hits@3", "Hits@10", "AUC", "notes"]
 RESULTS = ROOT / "results" / "results.csv"
+PROTOCOL = "v2"   # v2 = shared UniformNegativeSampler + shared evaluator (average ties) + full-val epoch selection
 
 
 def build_and_fit(cfg: dict, d: dict):
@@ -69,6 +71,7 @@ def make_rows(cfg, cfg_path, d, res, auc, extra):
     info = "; ".join(f"{k}={v}" for k, v in extra.items())
     if cfg.get("notes"):
         info = (info + "; " if info else "") + str(cfg["notes"])
+    info = (info + "; " if info else "") + f"protocol={PROTOCOL}; torch={torch.__version__}; commit={git_commit(ROOT)}"
 
     def row(rel, g, a, n_txt, note=""):
         notes = "; ".join(x for x in [n_txt, note, info] if x)
@@ -91,6 +94,9 @@ def main() -> None:
     ap.add_argument("--config", required=True)
     ap.add_argument("--model", default=None, help="optional override of model in the YAML")
     ap.add_argument("--no_log", action="store_true", help="evaluate but do not write results.csv")
+    ap.add_argument("--check", action="store_true",
+                    help="re-run and compare with the latest logged run of this config; writes nothing")
+    ap.add_argument("--tol", type=float, default=0.005, help="max allowed difference for --check")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
@@ -107,6 +113,17 @@ def main() -> None:
     for r in rows:
         print(f"{r['relation']:16s} MRR={r['MRR']} H@1={r['Hits@1']} H@3={r['Hits@3']} "
               f"H@10={r['Hits@10']} AUC={r['AUC']}  [{r['notes']}]")
+    if args.check:
+        old = latest_logged_rows(RESULTS, args.config, cfg["seed"])
+        if not old:
+            print(f"\nCHECK: no logged run for {args.config} (seed {cfg['seed']}); run it once without --check")
+            sys.exit(2)
+        worst, ok, details = compare_rows(rows, old, args.tol)
+        print(f"\nCHECK {'PASS' if ok else 'FAIL'}: largest difference to the logged run = {worst:.5f} "
+              f"(tolerance {args.tol})")
+        for rel, col, diff in details[:10]:
+            print(f"  {rel:16s} {col:14s} diff={diff}")
+        sys.exit(0 if ok else 1)
     if not args.no_log:
         RESULTS.parent.mkdir(exist_ok=True)
         new = (not RESULTS.exists()) or RESULTS.stat().st_size == 0

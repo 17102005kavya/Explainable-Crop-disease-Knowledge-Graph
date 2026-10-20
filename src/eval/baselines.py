@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from src.data.prepare_cropdp import UniformNegativeSampler      # the team's ONE negative sampler
 from src.eval.evaluator import evaluate_ranking
 
 
@@ -79,6 +80,7 @@ class RotatEBaseline(nn.Module):
         torch.manual_seed(seed)
         train, val = data["train"], data["val"]
         known = torch.cat([data["train"], data["val"], data["test"]])
+        sampler = UniformNegativeSampler(known.numpy(), self.N, data["meta"]["num_relations"], seed=seed)
         opt = torch.optim.Adam(self.parameters(), lr=lr)
         best_mrr, best_state, best_ep = -1.0, None, 0
 
@@ -91,11 +93,8 @@ class RotatEBaseline(nn.Module):
                 h, r, t = b[:, 0], b[:, 1], b[:, 2]
                 B = len(b)
                 pos = self.score(h, r, t)                                          # [B]
-                rand = torch.randint(0, self.N, (B, num_neg))
-                head_side = torch.rand(B, 1) < 0.5                                 # corrupt head or tail
-                hn = torch.where(head_side, rand, h[:, None].expand(B, num_neg))
-                tn = torch.where(head_side, t[:, None].expand(B, num_neg), rand)
-                rn = r[:, None].expand(B, num_neg)
+                negs = torch.from_numpy(sampler.sample(b.numpy(), k=num_neg)).long()   # shared sampler -> [B, K, 3]
+                hn, rn, tn = negs[..., 0], negs[..., 1], negs[..., 2]
                 neg = self.score(hn.reshape(-1), rn.reshape(-1), tn.reshape(-1)).view(B, num_neg)
                 w = torch.softmax(adv_temp * neg, dim=1).detach()
                 loss = -F.logsigmoid(pos).mean() - (w * F.logsigmoid(-neg)).sum(1).mean()
@@ -212,6 +211,7 @@ class RGCNDistMultBaseline(nn.Module):
         assert self.edge_index.size(1) == 2 * n, "graph must be train edges + inverses"
         tid = torch.arange(n).repeat(2)          # edge k and n+k both come from train triple k
         known = torch.cat([data["train"], data["val"], data["test"]])
+        sampler = UniformNegativeSampler(known.numpy(), self.N, data["meta"]["num_relations"], seed=seed)
         opt = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         best_mrr, best_state, best_ep = -1.0, None, 0
 
@@ -229,11 +229,8 @@ class RGCNDistMultBaseline(nn.Module):
                 keep = ~drop[tid]                        # hide this batch's own edges from the graph
                 z = self.encode(self.edge_index[:, keep], self.edge_type[keep])
                 pos = self._score(z, self.rel, h, r, t)
-                rand = torch.randint(0, self.N, (B, num_neg))
-                head_side = torch.rand(B, 1) < 0.5
-                hn = torch.where(head_side, rand, h[:, None].expand(B, num_neg))
-                tn = torch.where(head_side, t[:, None].expand(B, num_neg), rand)
-                rn = r[:, None].expand(B, num_neg)
+                negs = torch.from_numpy(sampler.sample(b.numpy(), k=num_neg)).long()   # shared sampler -> [B, K, 3]
+                hn, rn, tn = negs[..., 0], negs[..., 1], negs[..., 2]
                 neg = self._score(z, self.rel, hn, rn, tn)
                 w = torch.softmax(adv_temp * neg, dim=1).detach()
                 loss = -F.logsigmoid(pos).mean() - (w * F.logsigmoid(-neg)).sum(1).mean()

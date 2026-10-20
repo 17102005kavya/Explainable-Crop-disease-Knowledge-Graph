@@ -23,6 +23,7 @@ import yaml
 
 from src.data.loader import load_processed
 from src.data.prepare_cropdp import UniformNegativeSampler
+from src.eval.evaluator import evaluate_ranking
 from src.encoder.node_features import NodeFeatures
 from src.encoder.rgcn import RGCNEncoder
 
@@ -74,55 +75,14 @@ def evaluate_filtered_tail(
     num_eval: int = 500,
     batch_size: int = 100,
 ) -> Dict[str, float]:
-    """Filtered tail-prediction MRR, Hits@1, Hits@3, and Hits@10 on validation triples.
+    """Filtered tail prediction on validation triples, through the SHARED evaluator (src/eval/evaluator.py).
 
     If num_eval is 0, None, or negative, evaluates the entire validation set of triples.
     """
     scorer.eval()
-    if num_eval is not None and num_eval > 0:
-        eval_triples = val_triples[:num_eval]
-    else:
-        eval_triples = val_triples
-
-    ranks = []
-
-    for i in range(0, len(eval_triples), batch_size):
-        batch = eval_triples[i:i + batch_size]
-        h = batch[:, 0]
-        r = batch[:, 1]
-        t = batch[:, 2]
-
-        scores = scorer.score_all_tails(H, h, r)  # [B, N]
-
-        for j in range(len(batch)):
-            hj = int(h[j])
-            rj = int(r[j])
-            tj = int(t[j])
-            target_score = scores[j, tj].item()
-
-            row_scores = scores[j].clone()
-            filter_tails = known_tails.get((hj, rj), set())
-            for ft in filter_tails:
-                if ft != tj:
-                    row_scores[ft] = -1e9
-
-            # Number of entities with strictly higher score + 1
-            rank = (row_scores > target_score).sum().item() + 1
-            ranks.append(rank)
-
-    ranks_arr = np.array(ranks, dtype=np.float64)
-    mrr = float(np.mean(1.0 / ranks_arr))
-    hits1 = float(np.mean(ranks_arr <= 1.0))
-    hits3 = float(np.mean(ranks_arr <= 3.0))
-    hits10 = float(np.mean(ranks_arr <= 10.0))
-
-    return {
-        "mrr": mrr,
-        "hits@1": hits1,
-        "hits@3": hits3,
-        "hits@10": hits10,
-        "num_eval": len(ranks),
-    }
+    triples = val_triples[:num_eval] if (num_eval is not None and num_eval > 0) else val_triples
+    return evaluate_ranking(lambda h, r: scorer.score_all_tails(H, h, r), triples, known_tails,
+                            batch_size=batch_size)
 
 
 def train_encoder(
