@@ -3,10 +3,10 @@
 | Model | MRR | Hits@1 | Hits@3 | Hits@10 | AUC | Macro MRR | Macro Hits@10 |
 |---|---|---|---|---|---|---|---|
 | Popularity (sanity check) | 0.1355 | 0.0747 | 0.1344 | 0.2533 | 0.7194 | 0.2734 | 0.4717 |
-| RotatE alone (baseline 1) | 0.1963 | 0.1246 | 0.2235 | 0.3414 | 0.8418 | 0.3009 | 0.5247 |
-| R-GCN + DistMult (baseline 2) | 0.0864 | 0.0268 | 0.0886 | 0.2039 | 0.8501 | 0.1518 | 0.3873 |
-| DistMult, no graph (ablation) | 0.1581 | 0.0922 | 0.1818 | 0.2940 | 0.8720 | 0.2261 | 0.4237 |
-| VRGAE-lite (ours, shared training recipe) | 0.0834 | 0.0433 | 0.0793 | 0.1627 | 0.9057 | 0.1534 | 0.2914 |
+| RotatE alone (baseline 1) | 0.2134 | 0.1509 | 0.2374 | 0.3393 | 0.8553 | 0.3502 | 0.5407 |
+| R-GCN + DistMult (baseline 2) | 0.1158 | 0.0623 | 0.1112 | 0.2317 | 0.8789 | 0.2205 | 0.5014 |
+| DistMult, no graph (ablation) | 0.1635 | 0.1004 | 0.1818 | 0.2930 | 0.8735 | 0.2369 | 0.4283 |
+| VRGAE-lite (ours, shared training recipe) | 0.0793 | 0.0396 | 0.0721 | 0.1643 | 0.9062 | 0.1509 | 0.3143 |
 | VRGAE-lite (ours, as trained by Person 3) | 0.0045 | 0.0005 | 0.0026 | 0.0093 | 0.4782 | 0.0037 | 0.0080 |
 
 ## Table 2: MRR per relation (test split)
@@ -14,10 +14,10 @@
 | Model | RegionIs | ConditionIs | Damage | InflictHarmPart | ManifestAs | TemperIs* |
 |---|---|---|---|---|---|---|
 | Popularity (sanity check) | 0.2831 | 0.1924 | 0.1458 | 0.5635 | 0.0430 | 0.4127 |
-| RotatE alone (baseline 1) | 0.4447 | 0.2519 | 0.3036 | 0.5473 | 0.0656 | 0.1925 |
-| R-GCN + DistMult (baseline 2) | 0.2127 | 0.1252 | 0.0962 | 0.2546 | 0.0348 | 0.1872 |
-| DistMult, no graph (ablation) | 0.4138 | 0.1603 | 0.2818 | 0.4293 | 0.0415 | 0.0297 |
-| VRGAE-lite (ours, shared training recipe) | 0.2662 | 0.1301 | 0.0750 | 0.4317 | 0.0076 | 0.0101 |
+| RotatE alone (baseline 1) | 0.5269 | 0.2502 | 0.3339 | 0.5634 | 0.0707 | 0.3561 |
+| R-GCN + DistMult (baseline 2) | 0.2196 | 0.1658 | 0.1011 | 0.5407 | 0.0418 | 0.2543 |
+| DistMult, no graph (ablation) | 0.4240 | 0.1644 | 0.2889 | 0.4740 | 0.0410 | 0.0293 |
+| VRGAE-lite (ours, shared training recipe) | 0.2548 | 0.1044 | 0.0775 | 0.4224 | 0.0066 | 0.0399 |
 | VRGAE-lite (ours, as trained by Person 3) | 0.0045 | 0.0057 | 0.0073 | 0.0008 | 0.0037 | 0.0003 |
 | n (test facts) | 156 | 203 | 387 | 132 | 1055 | 9 |
 
@@ -26,10 +26,10 @@
 | Model | RegionIs | ConditionIs | Damage | InflictHarmPart | ManifestAs | TemperIs* |
 |---|---|---|---|---|---|---|
 | Popularity (sanity check) | 0.7115 | 0.4384 | 0.2894 | 0.7652 | 0.0701 | 0.5556 |
-| RotatE alone (baseline 1) | 0.9167 | 0.4631 | 0.5556 | 0.7803 | 0.0995 | 0.3333 |
-| R-GCN + DistMult (baseline 2) | 0.6538 | 0.2857 | 0.2300 | 0.5303 | 0.0682 | 0.5556 |
-| DistMult, no graph (ablation) | 0.8141 | 0.3547 | 0.5065 | 0.6742 | 0.0815 | 0.1111 |
-| VRGAE-lite (ours, shared training recipe) | 0.6090 | 0.2808 | 0.1576 | 0.6894 | 0.0114 | 0.0000 |
+| RotatE alone (baseline 1) | 0.9231 | 0.4286 | 0.5530 | 0.7955 | 0.0995 | 0.4444 |
+| R-GCN + DistMult (baseline 2) | 0.6346 | 0.4187 | 0.2196 | 0.7803 | 0.0664 | 0.8889 |
+| DistMult, no graph (ablation) | 0.8269 | 0.3448 | 0.5065 | 0.7045 | 0.0758 | 0.1111 |
+| VRGAE-lite (ours, shared training recipe) | 0.6603 | 0.2512 | 0.1550 | 0.6970 | 0.0114 | 0.1111 |
 | VRGAE-lite (ours, as trained by Person 3) | 0.0064 | 0.0197 | 0.0155 | 0.0000 | 0.0066 | 0.0000 |
 | n (test facts) | 156 | 203 | 387 | 132 | 1055 | 9 |
 

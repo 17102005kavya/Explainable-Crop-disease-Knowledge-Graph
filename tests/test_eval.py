@@ -85,3 +85,12 @@ def test_backward_compatible_keys_and_average_ties():
     assert out["mrr"] == pytest.approx(out["MRR"])
     assert out["per_relation"][1]["name"] == "b" and out["per_relation"][1]["count"] == 1
     assert out["mean_rank"] == pytest.approx(5.5)
+
+def test_accepts_prebuilt_known_dict_and_no_num_entities():
+    from src.eval.evaluator import build_known_tails_dict
+    kd = build_known_tails_dict(known)
+    out = evaluate_ranking(perfect, known, kd, batch_size=2)       # no num_entities, dict instead of tensor
+    assert out["MRR"] == pytest.approx(1.0)
+    plain = {(0, 0): {1, 2}, (3, 1): {4}}                          # a plain dict without defaults also works
+    out2 = evaluate_ranking(perfect, known, plain)
+    assert out2["MRR"] == pytest.approx(1.0)

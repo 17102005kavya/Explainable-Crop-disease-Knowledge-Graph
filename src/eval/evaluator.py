@@ -36,22 +36,25 @@ def _summary(ranks: torch.Tensor) -> Dict[str, float]:
 
 @torch.no_grad()
 def evaluate_ranking(score_all_tails: ScoreAllTails, triples: torch.Tensor,
-                     known_triples: torch.Tensor, num_entities: int,
+                     known_triples, num_entities: Optional[int] = None,
                      batch_size: int = 256,
                      relation_names: Optional[List[str]] = None) -> Dict[str, Any]:
-    """Filtered tail prediction over all N candidates; known_triples = train + val + test."""
-    known = build_known_tails_dict(known_triples)
+    """Filtered tail prediction over all N candidates.
+    known_triples = train + val + test as a [M,3] tensor, OR a ready-made {(h, r): {tails}} dict.
+    num_entities is optional (only used as a shape check)."""
+    known = known_triples if isinstance(known_triples, dict) else build_known_tails_dict(known_triples)
 
     all_ranks, all_rels = [], []
     for s in range(0, len(triples), batch_size):
         batch = triples[s:s + batch_size]
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         scores = score_all_tails(h, r).float().clone()                # [B, N]
-        assert scores.shape == (len(batch), num_entities), scores.shape
+        if num_entities is not None:
+            assert scores.shape == (len(batch), num_entities), scores.shape
         rows = torch.arange(len(batch), device=scores.device)
         true = scores[rows, t.to(scores.device)].clone()              # score of the true tail
         for i, (hi, ri, ti) in enumerate(batch.tolist()):             # filter OTHER true tails
-            others = [x for x in known[(hi, ri)] if x != ti]
+            others = [x for x in known.get((hi, ri), ()) if x != ti]
             if others:
                 scores[i, others] = float("-inf")
         greater = (scores > true[:, None]).sum(1)
