@@ -50,26 +50,35 @@ Static findings:
 
 | Path | Sampling | Message-passing edges | Selection/evaluation |
 |---|---|---|---|
-| `src/encoder/train_encoder.py` | `UniformNegativeSampler` | Full train graph | Custom tail rank; default evaluates up to 500 validation triples; ties optimistic. |
-| `src/model/train.py` | `UniformNegativeSampler` | Full train graph | Custom tail rank; default validation limit 500. |
-| `src/model/train_models.py` | Direct random corruption in training loop | Full train graph | Shared evaluator; AdamW and cosine schedule. |
-| `src/eval/vrgae_adapter.py` | Direct random corruption; no positive filtering in this adapter | Hides current batch edges | Shared evaluator on full validation split; AdamW. |
-| `src/eval/baselines.py` RotatE/R-GCN+DistMult | Direct random corruption | R-GCN baseline masks current batch edges; plain RotatE has no graph | Shared evaluator in fit methods. |
+| `src/encoder/train_encoder.py` | `UniformNegativeSampler` | Full train graph | Shared evaluator; full validation selection in protocol v2. |
+| `src/model/train.py` | `UniformNegativeSampler` | Full train graph | Legacy full-batch path; not the selected comparison recipe. |
+| `src/model/train_models.py` | `UniformNegativeSampler` | Full train graph | Separate full-batch path; not the selected comparison recipe. |
+| `src/eval/vrgae_adapter.py` | `UniformNegativeSampler` | Hides current batch edges | Shared evaluator on full validation split; AdamW. |
+| `src/eval/baselines.py` RotatE/R-GCN+DistMult | `UniformNegativeSampler` | R-GCN baseline masks current batch edges; plain RotatE has no graph | Shared evaluator and full validation model selection. |
 | `src/eval/run_experiment.py` | Delegates to model implementation | Model-dependent | Shared evaluator for final test ranking; fixed negatives for AUC. |
 
-Therefore, the code does not establish a single shared training recipe or negative-sampling procedure across all models. The P4 baseline's custom `RGCNEncoderLite` is also distinct from the PyG R-GCN used by VRGAE/P2.
+Protocol v2 is the selected main comparison because it standardizes the negative
+sampler, ranking evaluator, tie handling, and validation selection for the runner
+models. The separately reported Person 3 full-batch checkpoint remains non-like-for-like.
+The P4 baseline's custom `RGCNEncoderLite` is also distinct from the PyG R-GCN used by VRGAE/P2.
 
 ## 5. Results integrity
 
-`results/results.csv` has multiple recorded outcomes for VRGAE, including shared-recipe test MRR `0.0072` and `0.0834`, a checkpoint-evaluation MRR `0.0045`, and a Person 3 run at `0.0259`. Exact checkpoints and logs referenced by those records are not present. The table generator groups records by run ID/config stem and `final_table.md` matches its CSV rows, but this only verifies table consistency.
+The selected protocol-v2 overall MRRs recorded in `results/results.csv` are: RotatE
+`0.2134`, R-GCN + DistMult `0.1158`, DistMult without graph `0.1635`, and VRGAE-lite
+shared recipe `0.0793`. The v2 rows state protocol, source commit, PyTorch build,
+selected epoch, and config. All six v2 run groups are marked
+`recorded-unverified` because full environment/config/data fingerprints, and most
+checkpoints, are not retained. The 78 pre-v2 rows are marked `legacy-unverified`.
+`make_table.py` prefers v2 rows and the generated `final_table.md` matches them; this
+confirms recorded-table consistency, not independent result reproduction.
 
 The AUC caveat is supported: default fixed negatives are corrupted from the unrestricted entity set, not constrained to the relation's expected tail type. No arrays are present to calculate how many negatives have an incorrect type.
 
-New runs now carry explicit provenance fields and a saved checkpoint checksum. The
-pre-existing rows are marked `legacy-unverified` because the original data, source
-revision, package environment, and checkpoints are unavailable; their missing values
-are deliberately not inferred or fabricated. `reproduce.py` refuses to claim a rerun
-for these legacy rows.
+New runs now carry explicit provenance fields and a saved checkpoint checksum. V2
+rows retain the provenance actually stated in their notes; missing values are not
+inferred. `reproduce.py` refuses to claim a rerun unless full provenance and artifacts
+are available.
 
 ## 6. Previous report errors corrected
 

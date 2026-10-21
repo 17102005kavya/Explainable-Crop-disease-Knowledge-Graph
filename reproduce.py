@@ -78,8 +78,9 @@ def verify_provenance(run: dict[str, dict]) -> tuple[Path, dict]:
     missing = [field for field in PROVENANCE_FIELDS if not first.get(field)]
     if missing or first.get("provenance_status") != "complete":
         raise ValueError(
-            "This is a legacy/unverified row and cannot be reproduced from the recorded "
-            f"provenance. Missing: {', '.join(missing) or 'complete provenance status'}."
+            "This run is recorded but cannot be reproduced from complete verified "
+            f"provenance (status={first.get('provenance_status') or 'missing'}). "
+            f"Missing fields: {', '.join(missing) or 'complete provenance status'}."
         )
     if any(row.get(field) != first.get(field) for row in run.values()
            for field in PROVENANCE_FIELDS):

@@ -19,22 +19,31 @@ RELS = ["RegionIs", "ConditionIs", "Damage", "InflictHarmPart", "ManifestAs", "T
 
 
 def load_latest() -> dict:
-    runs = {}                                           # run_id -> {relation: row}
+    runs = {}  # run_id -> {relation: row}
     with open(CSV, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             runs.setdefault(row["run_id"], {})[row["relation"]] = row
-    best = {}                                           # config stem -> (timestamp, run_id, rows)
+    best = {}  # config stem -> (protocol priority, timestamp, run_id, rows)
     for rid, rows in runs.items():
         first = next(iter(rows.values()))
         if "overall" not in rows:
-
             continue
 
         stem = Path(first["config"].replace("\\", "/")).stem
         ts = rid.rsplit("-", 1)[-1]
-        if stem not in best or ts > best[stem][0]:
-            best[stem] = (ts, rid, rows)
-    return best
+        protocol = first.get("protocol", "")
+        is_v2 = (
+            protocol == "v2"
+            or "v2" in protocol
+            or "protocol=v2" in first.get("notes", "")
+        )
+        priority = int(is_v2)
+        if stem not in best or (priority, ts) > (
+            best[stem][0],
+            best[stem][1],
+        ):
+            best[stem] = (priority, ts, rid, rows)
+    return {stem: (ts, rid, rows) for stem, (_, ts, rid, rows) in best.items()}
 
 
 def md(header, rows):
@@ -63,8 +72,11 @@ def main() -> None:
         md(["Model"] + rel_hdr, t2 + [n_row]),
         "## Table 3: Hits@10 per relation (test split)",
         md(["Model"] + rel_hdr, t3 + [n_row]),
-        f"Seed(s): {', '.join(seeds)} (single seed: treat MRR differences below about 0.01 as ties). "
-        "Best epoch chosen on the validation split; all numbers are filtered tail prediction on test.\n\n"
+        f"Protocol: v2 (shared filtered negative sampler and evaluator). Seed(s): {', '.join(seeds)}"
+        " "
+        "(single seed: treat MRR differences below about 0.01 as ties). "
+        "Best epoch chosen on the full validation split; all numbers are filtered tail prediction on test. "
+        "Earlier protocol-v1 rows are retained in results.csv for history but excluded from this comparison.\n\n"
         "\\* TemperIs has only 9 test facts and is not reliable.\n\n"
         "AUC is secondary: many fixed negatives have the wrong entity type, so AUC rewards type-matching "
         "more than fine-grained ranking. Rely on MRR and Hits@K.",

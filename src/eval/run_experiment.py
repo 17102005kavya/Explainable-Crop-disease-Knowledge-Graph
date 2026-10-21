@@ -205,10 +205,13 @@ def main() -> None:
         config_name = config_file.relative_to(ROOT).as_posix()
     except ValueError:
         config_name = str(config_file)
-    try:
-        checkpoint_name = checkpoint_path.relative_to(ROOT).as_posix()
-    except ValueError:
-        checkpoint_name = str(checkpoint_path)
+    if args.check:
+        checkpoint_name = "not-saved-check-mode"
+    else:
+        try:
+            checkpoint_name = checkpoint_path.relative_to(ROOT).as_posix()
+        except ValueError:
+            checkpoint_name = str(checkpoint_path)
     provenance = {
         "run_id": run_id,
         "started_at": started_at,
@@ -221,14 +224,15 @@ def main() -> None:
         "data_sha256": data_fingerprint(data_dir),
         **environment_identity(),
         "checkpoint_path": checkpoint_name,
-        "checkpoint_sha256": "",
+        "checkpoint_sha256": "not-applicable" if args.check else "",
         "source_checkpoint_path": source_checkpoint_path,
         "source_checkpoint_sha256": source_checkpoint_sha256 or "not-applicable",
         "selected_epoch": extra.get("best_epoch") or extra.get("ckpt_epoch") or "not-applicable",
-        "provenance_status": "complete",
+        "provenance_status": "verification-only" if args.check else "complete",
     }
-    save_checkpoint(model, checkpoint_path, cfg, extra, provenance)
-    provenance["checkpoint_sha256"] = sha256_file(checkpoint_path)
+    if not args.check:
+        save_checkpoint(model, checkpoint_path, cfg, extra, provenance)
+        provenance["checkpoint_sha256"] = sha256_file(checkpoint_path)
     res, auc = evaluate_test(model, d)
     rows = make_rows(cfg, config_name, d, res, auc, extra, provenance)
 

@@ -13,7 +13,7 @@ The prior audit matrix had 30 requirement entries: **2 Complete, 27 Partial, 1 N
 The key blockers are:
 
 1. **Missing data and run artifacts:** metrics in `results/results.csv` cannot be tied to inspected checkpoints, split arrays, or logs.
-2. **Multiple, non-equivalent training paths:** negative sampling, batch edge masking, optimizers, validation limits, and loss handling differ between scripts.
+2. **Multiple training paths:** protocol v2 is selected for the main comparison because it uses one filtered negative sampler, one shared evaluator, and full-validation epoch selection; older runs and the Person 3 checkpoint remain historical comparisons.
 3. **VRGAE result discrepancy:** the CSV contains more than one shared-recipe result and a much lower checkpoint result; existing evidence does not establish a single cause.
 
 ### Provenance follow-up
@@ -22,10 +22,12 @@ The experiment runner now records protocol, Git commit/dirty state, a source-cod
 fingerprint, the original and effective config, a processed-data fingerprint,
 environment versions, selected epoch, and saved-checkpoint checksums for new runs.
 `reproduce.py` validates those identities and can rerun a selected run against its
-recorded metrics. The existing rows predate this instrumentation and are marked
-`legacy-unverified`; their provenance cannot be reconstructed from the current
-checkout. The processed dataset and historical checkpoints are still absent, so the
-new tooling does not independently reproduce the existing results.
+recorded metrics for future runs. The six protocol-v2 run groups are retained in the
+CSV with their recorded protocol, source commit (`b5fbc1e`), CPU PyTorch version, and
+selected epoch. They are marked `recorded-unverified`: processed-data fingerprints
+and full checkpoints/logs were not retained. The 78 older rows without protocol-v2
+notes are marked `legacy-unverified`. Neither group can be retroactively treated as
+fully reproduced from this checkout.
 
 The variational modules are **implemented in the current source**. Earlier statements in the reports that `latent.py` and `loss.py` were stubs are stale.
 
@@ -67,7 +69,10 @@ The claimed data counts in `README.md` (11,417 entities, 6 relations, 19,422 tri
 
 The independent result records are not accompanied by corresponding logs or checkpoints in this checkout. The final P4 configuration in `configs/rgcn_distmult.yaml` also differs from the P2 tuning winner described in CSV notes. Additionally, P4's `RGCNEncoderLite` is a separate encoder implementation, so its baseline results should not be described as the same encoder implementation used by VRGAE.
 
-`train_encoder.py` uses a custom ranking implementation that ranks ties optimistically, whereas the shared evaluator averages ties. That can affect checkpoint selection, even though final P4 rankings use the shared evaluator.
+The older encoder records were produced before the v2 comparison. Protocol v2 uses
+the shared evaluator, average tie ranks, filtered negative sampler, and full
+validation selection for the comparison runs. The encoder tuning table is a separate
+training path and should not be conflated with the v2 benchmark row.
 
 ## 5. Latent, decoders, and VRGAE — Person 3
 
@@ -83,21 +88,42 @@ The model and unit/integration test code exist. This review did not execute thos
 
 `src/eval/evaluator.py` provides filtered tail ranking, average tie ranks, micro metrics, per-relation metrics, unweighted macro metrics, and AUC. `src/eval/run_experiment.py` calls the shared evaluator for test ranking and uses fixed negatives for AUC. `src/eval/make_table.py` assembles the table from CSV run groups.
 
-The repository has code for popularity, plain RotatE, R-GCN+DistMult, and a no-graph DistMult ablation. Their training procedures are not all uniform: the plain RotatE and R-GCN baseline fit methods use direct random corruptions; the shared VRGAE adapter also generates random corruptions directly, while other paths use the filtered `UniformNegativeSampler`.
+The repository has code for popularity, plain RotatE, R-GCN+DistMult, and a no-graph
+DistMult ablation. Protocol v2 uses `UniformNegativeSampler` for baseline and
+shared-recipe VRGAE training and the common filtered evaluator for validation and
+test comparison. The Person 3 full-batch checkpoint follows a separate historical
+training path and is reported separately.
 
 The final-table CSV values are consistent with the values displayed in `results/final_table.md`; this confirms table-to-CSV consistency only, not the underlying model evaluations. The CSV records per-relation test counts of 156, 203, 387, 132, 1,055, and 9 (1,942 total). TemperIs has very few test examples.
 
 ## 7. Performance records and VRGAE discrepancy
 
-The repository records these outcomes:
+Protocol v2 is the selected final comparison. Its recorded results are shown below;
+the table is generated from the latest protocol-v2 rows per config in
+`results/results.csv`. The recorded metrics and run notes are present, but the
+dataset, training checkpoints, and full logs are not, so they have not been
+independently reproduced in this checkout.
 
-| Result record | Test MRR | Hits@10 | AUC | Provenance available here |
-|---|---:|---:|---:|---|
-| RotatE alone | 0.1963 | 0.3414 | 0.8418 | CSV row group and config; no checkpoint/log |
-| VRGAE shared recipe, earlier run | 0.0072 | 0.0165 | 0.5688 | CSV row group; best epoch 2 noted |
-| VRGAE shared recipe, later run | 0.0834 | 0.1627 | 0.9057 | CSV row group; best epoch 30 noted |
-| VRGAE checkpoint evaluation | 0.0045 | 0.0093 | 0.4782 | CSV references `results/vrgae_checkpoint.pt`, but file is absent |
-| Person 3 training record | 0.0259 | 0.0772 | Not recorded | CSV record; no matching checkpoint/log present |
+| Protocol-v2 result | Test MRR | Hits@10 | AUC |
+|---|---:|---:|---:|
+| Popularity sanity check | 0.1355 | 0.2533 | 0.7194 |
+| RotatE alone | 0.2134 | 0.3393 | 0.8553 |
+| R-GCN + DistMult | 0.1158 | 0.2317 | 0.8789 |
+| DistMult, no graph | 0.1635 | 0.2930 | 0.8735 |
+| VRGAE-lite, shared recipe | 0.0793 | 0.1643 | 0.9062 |
+| VRGAE-lite, Person 3 checkpoint | 0.0045 | 0.0093 | 0.4782 |
+
+The v2 run rows identify the producing commit, PyTorch build, selected epoch, config,
+and metrics. For the checkpoint-evaluation row, the CSV retains the historical path
+and a truncated checksum in its notes; the checkpoint itself is not in this
+checkout. The other v2 runs also lack saved checkpoints and processed-data identity.
+The full per-relation metrics are in `results/final_table.md`.
+
+Protocol v2 is preferred for comparing the baseline and shared-recipe models because
+it standardizes negative sampling and ranking/tie handling and selects epochs using
+the full validation set. This is a methodological choice, not proof that the scores
+are independently reproducible. The Person 3 full-batch checkpoint is shown
+separately because its training path differs.
 
 The source confirms differences between paths: full-batch versus mini-batch training, batch-edge masking versus full train graph, filtered sampler versus unfiltered direct corruption, Adam versus AdamW (and in one path cosine scheduling), and differing evaluation limits/evaluators. These are plausible comparability issues, but **the cause of the specific result discrepancy is unverified**. The checkpoint, data, exact mapping tables, and loss logs are needed to determine whether dimensions, weights, training behavior, or evaluation explain it.
 

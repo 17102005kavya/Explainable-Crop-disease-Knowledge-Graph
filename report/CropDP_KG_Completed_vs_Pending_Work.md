@@ -100,11 +100,12 @@ Do not treat “implemented” or “recorded” as equivalent to “tested” o
 - Shared filtered tail-ranking/AUC evaluator, baseline implementations, YAML runner, CSV logging, and table generator exist.
 - The displayed final table agrees with its recorded CSV rows.
 - New runner output records source/config/data/environment fingerprints, protocol, selected epoch, and saved checkpoint checksums; `reproduce.py` verifies or reruns fully-provenanced rows.
+- Protocol v2 is selected for the main comparison; `make_table.py` prioritizes v2 over historical v1 rows.
 
 ### Remaining
 
 - Underlying data, checkpoints, and logs are absent, so results cannot be independently reproduced.
-- Historical CSV rows are marked `legacy-unverified`; their provenance and artifacts cannot be retroactively recovered from this checkout.
+- Historical protocol-v1 rows are marked `legacy-unverified`. Protocol-v2 rows retain the commit, PyTorch build, and selected epoch recorded in their original notes, but are `recorded-unverified` because full provenance and most run artifacts are unavailable.
 - Baseline and VRGAE training paths do not all share negative generation.
 - Baseline config does not reflect the P2 tuning winner.
 - Macro averages and per-relation counts are represented in the code/CSV, but raw model outputs are absent.

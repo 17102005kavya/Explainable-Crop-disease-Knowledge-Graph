@@ -5,9 +5,14 @@ config in `configs/`. Rows written by the older team scripts (relation `all`, no
 ignored by `make_table.py`.
 
 ## 1. Environment
-1. Install PyTorch for your machine, then `pip install -r requirements.txt` (needs `torch_geometric`, `scikit-learn`, `pyyaml`).
-2. The exact versions of the last full run are stored in `requirements-lock.txt`; each logged row also records `torch=...`
-   and `commit=...` in its `notes` column.
+Install the pinned environment with:
+
+    python -m pip install -r requirements-lock.txt
+
+The protocol-v2 rows record PyTorch `2.14.1+cpu` and commit `b5fbc1e` in their
+notes. The CSV does not contain a full environment snapshot for those historical
+runs; the lockfile documents a supported resolved environment for future runs, not
+proof that every locked package version matches the original run environment.
 
 ## 2. Data
 `data/processed/` is not in Git. Either copy Person 1's `processed.zip` contents there, or rebuild it from the raw
@@ -28,12 +33,18 @@ CropDP-KG files in `data/raw/`:
 | VRGAE, shared recipe | `configs/vrgae.yaml` | torch_geometric |
 | VRGAE as trained by Person 3 | `configs/vrgae_checkpoint.yaml` | `results/vrgae_checkpoint.pt` (not in Git) |
 
-    python src/eval/run_experiment.py --config configs/rotate.yaml     # trains, evaluates on TEST, appends rows
-    python src/eval/make_table.py                                       # rebuilds results/final_table.md
-    python src/eval/reproduce.py                                        # re-runs every config and compares with the log
+    python src/eval/run_experiment.py --config configs/rotate.yaml      # trains, evaluates on TEST, appends rows
+    python src/eval/make_table.py                                        # prefers protocol-v2 rows
 
-`reproduce.py` writes nothing; it reports PASS when every metric of every relation is within 0.005 of the logged run
-(same machine: expect differences of about 0.0000; other machines or torch versions can differ slightly).
+For a new row with complete provenance, first verify its recorded inputs and then
+rerun that specific run:
+
+    python reproduce.py --run-id <run_id> --verify-only
+    python reproduce.py --run-id <run_id> --tolerance 0.005
+
+The runner's `--check` option and `src/eval/reproduce.py` compare metrics only. They
+do not validate source/data/checkpoint provenance. They write no results or
+checkpoints in check mode.
 
 ## 4. The shared protocol (the same for every model in the table)
 - Evaluator: `src/eval/evaluator.py` only. Filtered tail prediction against train + val + test, ties get the average
@@ -47,8 +58,16 @@ CropDP-KG files in `data/raw/`:
   message passing. `train.py` / `train_models.py` train with one full-batch step per epoch and the training edges visible;
   their VRGAE row is therefore reported separately (checkpoint row), not mixed with the shared-recipe row.
 
-## 5. What cannot be reproduced from Git alone
-- `results/vrgae_checkpoint.pt` is gitignored. The row records the first 12 characters of its SHA-256 in `notes`, so a
-  copy can be matched to the row. `python src/model/train.py` regenerates a checkpoint, but not necessarily the same bytes.
-- Rows in `results.csv` written before protocol v2 (no `protocol=` in `notes`) used an inline sampler; they stay in the
-  file but are superseded: `make_table.py` uses the newest run of each config.
+## 5. Recorded results and limitations
+- `make_table.py` prefers the latest protocol-v2 run per config; v1 rows remain in
+  `results.csv` for history and are marked `legacy-unverified`.
+- The six protocol-v2 run groups retain the protocol, source commit, PyTorch build,
+  selected epoch, and reported metrics. They are marked `recorded-unverified`
+  because the processed dataset, complete environment/config hashes, training logs,
+  and most checkpoints are not present.
+- The Person 3 checkpoint row records a short checksum in its notes, but the
+  checkpoint itself is absent. The short value is not a substitute for retaining
+  and verifying the full checkpoint checksum.
+- Consequently, the existing v2 rows can be inspected and used to regenerate the
+  table, but cannot be independently reproduced from this checkout. The
+  provenance-aware `reproduce.py` intentionally rejects them.

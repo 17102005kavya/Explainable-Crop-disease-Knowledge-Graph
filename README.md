@@ -45,5 +45,8 @@ python src/data/prepare_cropdp.py --raw data/raw --out data/processed --seed 42 
 One YAML per run in `configs/`; log every run in `results/results.csv`.
 New experiment rows include source, config, data, environment, selected-epoch, and
 checkpoint provenance. See `report/CropDP_KG_Test_and_Reproduction_Guide.md` for
-verification and rerun commands. Rows created before provenance logging are marked
-`legacy-unverified` and cannot be reproduced without their original artifacts.
+verification and rerun commands. Historical protocol-v2 rows retain the protocol,
+commit, PyTorch build, and selected epoch recorded in their notes, but are marked
+`recorded-unverified` because complete artifacts and provenance are missing. Earlier
+rows are `legacy-unverified`; neither category can be reproduced without the original
+artifacts.

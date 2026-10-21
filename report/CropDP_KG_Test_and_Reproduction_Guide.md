@@ -168,8 +168,10 @@ Before describing a metric as reproduced, retain:
 4. Test evaluation output, evaluator version, candidate set, filtering protocol, and fixed-negative identity for AUC.
 5. The generated CSV rows and final table.
 
-The historical rows currently in `results/results.csv` predate provenance logging and
-are explicitly marked `legacy-unverified`. The data arrays and historical checkpoints
-are also absent from this checkout. New runs record the required provenance and
-checkpoint artifacts automatically; this does not retroactively validate historical
-metrics or establish that the PDF's protocol-v2 values match the checked-in result rows.
+The six selected protocol-v2 run groups in `results/results.csv` preserve their
+recorded commit, CPU PyTorch version, selected epoch, and metrics. They are marked
+`recorded-unverified` because the processed-data identity and full checkpoints/logs
+were not retained. The 78 pre-v2 rows are marked `legacy-unverified`. The v2 rows
+match the generated final table, but neither class is independently reproducible
+from the current checkout. New runs record the full provenance and checkpoint
+artifacts automatically.

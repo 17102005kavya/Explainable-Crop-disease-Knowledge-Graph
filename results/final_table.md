@@ -33,7 +33,7 @@
 | VRGAE-lite (ours, as trained by Person 3) | 0.0064 | 0.0197 | 0.0155 | 0.0000 | 0.0066 | 0.0000 |
 | n (test facts) | 156 | 203 | 387 | 132 | 1055 | 9 |
 
-Seed(s): 42 (single seed: treat MRR differences below about 0.01 as ties). Best epoch chosen on the validation split; all numbers are filtered tail prediction on test.
+Protocol: v2 (shared filtered negative sampler and evaluator). Seed(s): 42 (single seed: treat MRR differences below about 0.01 as ties). Best epoch chosen on the full validation split; all numbers are filtered tail prediction on test. Earlier protocol-v1 rows are retained in results.csv for history but excluded from this comparison.
 
 \* TemperIs has only 9 test facts and is not reliable.
 
