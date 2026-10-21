@@ -1,10 +1,8 @@
-# Install PyTorch first, then PyTorch Geometric using the official install instructions for your torch version.
-# After everything works, run `pip freeze > requirements-lock.txt` and commit it so everyone matches.
-torch
-torch_geometric
-numpy
-pandas
-scipy
-scikit-learn
-pyyaml
-pytest
+torch==2.14.1
+torch-geometric==2.8.1
+numpy==2.5.4
+pandas==3.0.6
+scipy==1.18.1
+scikit-learn==1.9.1
+PyYAML==6.0.3
+pytest==9.1.1

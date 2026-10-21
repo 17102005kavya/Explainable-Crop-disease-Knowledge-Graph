@@ -37,9 +37,13 @@ Every model, baselines included, is evaluated through the same `evaluate_ranking
 
 ## Quick start
 ```
-pip install -r requirements.txt
+python -m pip install -r requirements-lock.txt
 pytest tests/test_data.py
 # only to regenerate the data:
 python src/data/prepare_cropdp.py --raw data/raw --out data/processed --seed 42 --drop-relations EnglishName
 ```
 One YAML per run in `configs/`; log every run in `results/results.csv`.
+New experiment rows include source, config, data, environment, selected-epoch, and
+checkpoint provenance. See `report/CropDP_KG_Test_and_Reproduction_Guide.md` for
+verification and rerun commands. Rows created before provenance logging are marked
+`legacy-unverified` and cannot be reproduced without their original artifacts.
