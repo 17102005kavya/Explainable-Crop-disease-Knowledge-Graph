@@ -1,5 +1,9 @@
-"""Owner: Person 4. Build the final comparison tables from results/results.csv
-(latest run per config, TEST split). Usage: python src/eval/make_table.py"""
+"""Build comparison tables from the newest complete protocol-v2 run per config.
+
+Historical and legacy-unverified runs remain in the CSV, but are not eligible
+for the headline table. Usage:
+python src/eval/make_table.py
+"""
 import csv
 from pathlib import Path
 
@@ -19,31 +23,25 @@ RELS = ["RegionIs", "ConditionIs", "Damage", "InflictHarmPart", "ManifestAs", "T
 
 
 def load_latest() -> dict:
+    """Select each config's newest complete protocol-v2 run."""
     runs = {}  # run_id -> {relation: row}
     with open(CSV, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             runs.setdefault(row["run_id"], {})[row["relation"]] = row
-    best = {}  # config stem -> (protocol priority, timestamp, run_id, rows)
+    best = {}  # config stem -> (timestamp, run_id, rows)
     for rid, rows in runs.items():
         first = next(iter(rows.values()))
-        if "overall" not in rows:
+        if "overall" not in rows or first.get("provenance_status") != "complete":
             continue
 
         stem = Path(first["config"].replace("\\", "/")).stem
         ts = rid.rsplit("-", 1)[-1]
         protocol = first.get("protocol", "")
-        is_v2 = (
-            protocol == "v2"
-            or "v2" in protocol
-            or "protocol=v2" in first.get("notes", "")
-        )
-        priority = int(is_v2)
-        if stem not in best or (priority, ts) > (
-            best[stem][0],
-            best[stem][1],
-        ):
-            best[stem] = (priority, ts, rid, rows)
-    return {stem: (ts, rid, rows) for stem, (_, ts, rid, rows) in best.items()}
+        if "v2" not in protocol and "protocol=v2" not in first.get("notes", ""):
+            continue
+        if stem not in best or ts > best[stem][0]:
+            best[stem] = (ts, rid, rows)
+    return best
 
 
 def md(header, rows):
@@ -77,6 +75,8 @@ def main() -> None:
         "(single seed: treat MRR differences below about 0.01 as ties). "
         "Best epoch chosen on the full validation split; all numbers are filtered tail prediction on test. "
         "Earlier protocol-v1 rows are retained in results.csv for history but excluded from this comparison.\n\n"
+        "Only complete-provenance protocol-v2 runs are included; historical unverified "
+        "rows remain in results.csv but are excluded. See results/REPRODUCE.md for the rerun audit.\n\n"
         "\\* TemperIs has only 9 test facts and is not reliable.\n\n"
         "AUC is secondary: many fixed negatives have the wrong entity type, so AUC rewards type-matching "
         "more than fine-grained ranking. Rely on MRR and Hits@K.",
