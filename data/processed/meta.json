@@ -1,0 +1,30 @@
+{
+  "seed": 42,
+  "val_frac": 0.1,
+  "test_frac": 0.1,
+  "num_entities": 11417,
+  "num_relations": 6,
+  "num_relations_with_inverse": 12,
+  "types": [
+    "PestDisease",
+    "Crop",
+    "Symptom",
+    "Condition",
+    "Part",
+    "Area",
+    "Temperature",
+    "EnglishName"
+  ],
+  "relations": [
+    "RegionIs",
+    "ConditionIs",
+    "Damage",
+    "InflictHarmPart",
+    "ManifestAs",
+    "TemperIs"
+  ],
+  "n_train": 15538,
+  "n_val": 1942,
+  "n_test": 1942,
+  "merge_near_dups": false
+}
