@@ -69,6 +69,7 @@ class ProvenanceTests(unittest.TestCase):
             rows.extend([
                 {"run_id": run_id, "config": "configs/rotate.yaml",
                  "relation": "overall", "protocol": protocol, "notes": "",
+                 "provenance_status": "complete",
                  "MRR": mrr},
             ])
         with tempfile.TemporaryDirectory() as temp:
@@ -84,6 +85,31 @@ class ProvenanceTests(unittest.TestCase):
             finally:
                 make_table.CSV = original_path
         self.assertEqual(latest["rotate"][2]["overall"]["MRR"], "0.2100")
+
+    def test_table_excludes_unverified_rows(self):
+        rows = [
+            {"run_id": "rotate-s42-20261022000000",
+             "config": "configs/rotate.yaml", "relation": "overall",
+             "protocol": "rotate-shared-runner-v2", "notes": "",
+             "provenance_status": "recorded-unverified", "MRR": "0.2100"},
+            {"run_id": "rotate-s42-20261022000001",
+             "config": "configs/rotate.yaml", "relation": "overall",
+             "protocol": "rotate-shared-runner-v2", "notes": "",
+             "provenance_status": "complete", "MRR": "0.1962"},
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            csv_path = Path(temp) / "results.csv"
+            with csv_path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=rows[0].keys(), lineterminator="\n")
+                writer.writeheader()
+                writer.writerows(rows)
+            original_path = make_table.CSV
+            try:
+                make_table.CSV = csv_path
+                latest = make_table.load_latest()
+            finally:
+                make_table.CSV = original_path
+        self.assertEqual(latest["rotate"][2]["overall"]["MRR"], "0.1962")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,18 @@
+﻿kind,relation,head,tail,details
+pair_in_multiple_relations,,草莓根腐病,草莓,Damage | InflictHarmPart
+head_and_tail_type_clash,,蘑菇畸形,,tail of: ManifestAs
+tail_in_multiple_types,,,东北,Damage | RegionIs
+tail_in_multiple_types,,,叶片,InflictHarmPart | ManifestAs
+tail_in_multiple_types,,,大葱,Damage | InflictHarmPart
+tail_in_multiple_types,,,树势衰弱,ConditionIs | ManifestAs
+tail_in_multiple_types,,,瓜果,Damage | InflictHarmPart
+tail_in_multiple_types,,,甘蓝,Damage | InflictHarmPart
+tail_in_multiple_types,,,白菜,Damage | InflictHarmPart
+tail_in_multiple_types,,,芝麻,Damage | ManifestAs
+tail_in_multiple_types,,,花,Damage | InflictHarmPart
+tail_in_multiple_types,,,茎腐,InflictHarmPart | ManifestAs
+tail_in_multiple_types,,,草莓,Damage | InflictHarmPart
+tail_in_multiple_types,,,葫芦,Damage | InflictHarmPart
+tail_in_multiple_types,,,蘑菇,Damage | ManifestAs
+near_duplicate_entities,,,,Japanese wax Scale | Japanese wax scale  (NOT merged)
+near_duplicate_entities,,,,Young soya bean Sclerotium rot | Young soya bean sclerotium rot  (NOT merged)
